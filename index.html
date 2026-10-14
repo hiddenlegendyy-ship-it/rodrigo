@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Math Dash - Cyber Neon Deluxe</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: #05050a;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    #game-container {
+      position: relative;
+      width: 800px;
+      height: 450px;
+      box-shadow: 0 0 50px rgba(0, 240, 255, 0.3), 0 0 20px rgba(255, 0, 128, 0.3);
+      border-radius: 16px;
+      overflow: hidden;
+      background: #090014;
+      border: 2px solid rgba(0, 240, 255, 0.4);
+    }
+
+    /* Linhas Scanline tipo TV CRT Antiga */
+    #game-container::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(9, 0, 20, 0.88);
+      backdrop-filter: blur(8px);
+      z-index: 10;
+      transition: opacity 0.3s ease;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    h1 {
+      font-size: 3.2rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 5px;
+      color: #fff;
+      text-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff, 0 0 40px #ff0077;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 1rem;
+      color: #a0a5c0;
+      margin-bottom: 20px;
+      text-align: center;
+      max-width: 80%;
+    }
+
+    input[type="text"] {
+      padding: 12px 20px;
+      font-size: 1.1rem;
+      border-radius: 25px;
+      border: 2px solid #00f0ff;
+      background: rgba(22, 25, 43, 0.8);
+      color: #fff;
+      text-align: center;
+      outline: none;
+      margin-bottom: 20px;
+      width: 280px;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      font-size: 1rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #0d0e15;
+      background: #00f0ff;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px) scale(1.05);
+      background: #fff;
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
+    }
+
+    .btn-secondary {
+      background: #ff0055;
+      color: #fff;
+      box-shadow: 0 0 15px rgba(255, 0, 85, 0.6);
+    }
+
+    .btn-secondary:hover {
+      background: #ff3377;
+      box-shadow: 0 0 25px rgba(255, 0, 85, 0.9);
+    }
+
+    .btn-shop {
+      background: #ffd700;
+      color: #0d0e15;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+    }
+
+    .btn-shop:hover {
+      background: #fff;
+      box-shadow: 0 0 25px rgba(255, 215, 0, 0.9);
+    }
+
+    #ranking-list {
+      width: 80%;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(22, 25, 43, 0.6);
+    }
+
+    .ranking-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 1rem;
+    }
+
+    .ranking-item:nth-child(1) { color: #ffd700; font-weight: bold; text-shadow: 0 0 8px rgba(255, 215, 0, 0.5); }
+    .ranking-item:nth-child(2) { color: #e0e0e0; }
+    .ranking-item:nth-child(3) { color: #cd7f32; }
+
+    .coins-display {
+      font-size: 1.3rem;
+      color: #ffd700;
+      font-weight: bold;
+      margin-bottom: 15px;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+    }
+
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      width: 90%;
+      max-height: 260px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      padding: 10px;
+    }
+
+    .shop-card {
+      background: rgba(22, 25, 43, 0.8);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.2s ease;
+    }
+
+    .shop-card:hover {
+      transform: translateY(-3px);
+      border-color: #00f0ff;
+    }
+
+    .skin-preview {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      position: relative;
+      border: 2px solid #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #fff;
+      background: #11162b;
+    }
+
+    .skin-name {
+      font-size: 0.8rem;
+      font-weight: bold;
+      text-align: center;
+      height: 24px;
+      display: flex;
+      align-items: center;
+    }
+
+    .skin-price {
+      font-size: 0.75rem;
+      color: #ffd700;
+    }
+
+    .btn-buy {
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      border-radius: 15px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+    }
+
+    .btn-buy.owned { background: #4caf50; color: #fff; box-shadow: 0 0 8px rgba(76, 175, 80, 0.4); }
+    .btn-buy.equipped { background: #00f0ff; color: #0d0e15; box-shadow: 0 0 10px rgba(0, 240, 255, 0.6); }
+    .btn-buy.buyable { background: #ffd700; color: #0d0e15; box-shadow: 0 0 8px rgba(255, 215, 0, 0.4); }
+    .btn-buy.disabled { background: #333; color: #777; cursor: not-allowed; }
+
+    #math-ui {
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      background: rgba(13, 14, 21, 0.75);
+      border: 1px solid rgba(0, 240, 255, 0.5);
+      backdrop-filter: blur(4px);
+      padding: 12px 25px;
+      border-radius: 20px;
+      z-index: 5;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+    }
+
+    #problem { font-size: 1.6rem; font-weight: bold; letter-spacing: 1px; }
+
+    #options-container { display: flex; gap: 12px; }
+
+    .opt-btn {
+      padding: 8px 18px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #fff;
+      background: rgba(22, 25, 43, 0.9);
+      border: 2px solid #ff0055;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .opt-btn:hover {
+      background: #ff0055;
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(255, 0, 85, 0.8);
+    }
+
+    #status-bar {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 5px;
+      z-index: 5;
+      font-size: 0.95rem;
+      text-shadow: 0 0 5px rgba(0,0,0,0.8);
+    }
+
+    #player-tag {
+      position: absolute;
+      top: 15px;
+      left: 20px;
+      font-size: 1rem;
+      color: #00f0ff;
+      font-weight: bold;
+      z-index: 5;
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+    }
+
+    #pause-btn {
+      position: absolute;
+      bottom: 15px;
+      right: 20px;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background: rgba(22, 25, 43, 0.8);
+      border: 2px solid #00f0ff;
+      color: #00f0ff;
+      font-size: 1.2rem;
+      cursor: pointer;
+      z-index: 5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    #pause-btn:hover {
+      background: #00f0ff;
+      color: #0d0e15;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.8);
+    }
+  </style>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+  <div id="game-container">
+    <canvas id="gameCanvas" width="800" height="450"></canvas>
+
+    <div id="player-tag" class="hidden">Jogador: <span id="tag-name">---</span></div>
+
+    <button id="pause-btn" class="hidden">⏸️</button>
+
+    <div id="math-ui" class="hidden">
+      <span id="problem">2 + 3 = ?</span>
+      <div id="options-container">
+        <button class="opt-btn" onclick="checkAnswer(this)"></button>
+        <button class="opt-btn" onclick="checkAnswer(this)"></button>
+        <button class="opt-btn" onclick="checkAnswer(this)"></button>
+      </div>
+    </div>
+
+    <div id="status-bar" class="hidden">
+      <div><span id="life1">❤️</span><span id="life2">❤️</span></div>
+      <div>Fase: <span id="stage-val" style="color: #00f0ff; font-weight: bold;">1</span>/5</div>
+      <div>Progresso: <span id="stage-progress" style="color: #ffd700; font-weight: bold;">0</span>/5</div>
+      <div>Score: <span id="score-val">0</span></div>
+    </div>
+
+    <div id="start-screen" class="overlay">
+      <h1>Math Dash</h1>
+      <p>Responda correto para pular e complete as 5 fases!</p>
+      <input type="text" id="player-name" placeholder="Seu Nome/Nickname" maxlength="12">
+      <div class="btn-group">
+        <button class="btn" id="start-btn">JOGAR</button>
+        <button class="btn btn-shop" id="shop-btn">LOJA 🛒</button>
+        <button class="btn btn-secondary" id="rank-btn">RANKING</button>
+      </div>
+    </div>
+
+    <div id="shop-screen" class="overlay hidden">
+      <h1>Loja de Skins</h1>
+      <div class="coins-display">💰 Moedas: <span id="coins-val">0</span></div>
+      <div class="shop-grid" id="shop-grid"></div>
+      <button class="btn" id="shop-back-btn">VOLTAR</button>
+    </div>
+
+    <div id="ranking-screen" class="overlay hidden">
+      <h1>Top Jogadores</h1>
+      <div id="ranking-list">
+        <div class="ranking-item"><span>Carregando dados...</span></div>
+      </div>
+      <button class="btn" id="back-btn">VOLTAR</button>
+    </div>
+
+    <div id="pause-screen" class="overlay hidden">
+      <h1>Jogo Pausado</h1>
+      <div class="btn-group">
+        <button class="btn" id="resume-btn">CONTINUAR</button>
+        <button class="btn btn-secondary" id="quit-btn">SAIR</button>
+      </div>
+    </div>
+
+    <div id="gameover-screen" class="overlay hidden">
+      <h1 style="color: #ff0055; text-shadow: 0 0 20px #ff0055;">Game Over</h1>
+      <p id="gameover-reason" style="color: #ff0055; margin-bottom: 15px;"></p>
+      <p>Pontuação Final: <span id="final-score" style="color: #fff; font-weight: bold;">0</span></p>
+      <p style="color: #ffd700; margin-bottom: 15px;">+<span id="coins-earned">0</span> Moedas Adquiridas!</p>
+      <div class="btn-group">
+        <button class="btn btn-secondary" id="restart-btn">TENTAR NOVAMENTE</button>
+        <button class="btn" id="menu-btn">MENU</button>
+      </div>
+    </div>
+
+    <div id="win-screen" class="overlay hidden">
+      <h1 style="color: #00ff88; text-shadow: 0 0 20px #00ff88;">Você Venceu!</h1>
+      <p style="color: #00f0ff;">Parabéns! Você completou todas as 5 fases!</p>
+      <p>Pontuação Final: <span id="win-score" style="color: #fff; font-weight: bold;">0</span></p>
+      <p style="color: #ffd700; margin-bottom: 15px;">+<span id="win-coins">0</span> Moedas Adquiridas!</p>
+      <div class="btn-group">
+        <button class="btn btn-shop" id="win-restart-btn">JOGAR NOVAMENTE</button>
+        <button class="btn" id="win-menu-btn">MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      databaseURL: "https://math-dash-ranking-default-rtdb.firebaseio.com/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const startScreen = document.getElementById('start-screen');
+    const shopScreen = document.getElementById('shop-screen');
+    const rankingScreen = document.getElementById('ranking-screen');
+    const pauseScreen = document.getElementById('pause-screen');
+    const gameoverScreen = document.getElementById('gameover-screen');
+    const winScreen = document.getElementById('win-screen');
+    const playerNameInput = document.getElementById('player-name');
+    const rankingList = document.getElementById('ranking-list');
+    const mathUi = document.getElementById('math-ui');
+    const statusBar = document.getElementById('status-bar');
+    const playerTag = document.getElementById('player-tag');
+    const tagName = document.getElementById('tag-name');
+    const pauseBtn = document.getElementById('pause-btn');
+
+    let userCoins = parseInt(localStorage.getItem('md_coins')) || 0;
+    let ownedSkins = JSON.parse(localStorage.getItem('md_owned_skins')) || ['default'];
+    let equippedSkin = localStorage.getItem('md_equipped_skin') || 'default';
+
+    const SKINS_CATALOG = [
+      { id: 'default', name: 'Cubo Raio Neon', price: 0, color: '#00f0ff', symbol: '⚡' },
+      { id: 'warning', name: 'Alerta Amarelo', price: 300, color: '#ffcc00', symbol: '⚠' },
+      { id: 'heart', name: 'Pixel Heart', price: 500, color: '#ff0055', symbol: '♥' },
+      { id: 'mecha', name: 'Capacete Mecha', price: 750, color: '#00ff66', symbol: '🛡' },
+      { id: 'chip', name: 'Circuito Verde', price: 1000, color: '#00cc44', symbol: '⚙' },
+      { id: 'vector_k', name: 'Vetor Azul', price: 2000, color: '#00aaff', symbol: 'K' },
+      { id: 'target_purple', name: 'Alvo Roxo', price: 3500, color: '#bb00ff', symbol: '🎯' },
+      { id: 'shield_star', name: 'Escudo Estrela', price: 5000, color: '#ff2255', symbol: '★' },
+      { id: 'cross_blue', name: 'X Neon Azul', price: 7500, color: '#0044ff', symbol: '✖' },
+      { id: 'gdm_synth', name: 'GDM Equalizer', price: 10000, color: '#00e1ff', symbol: 'GDM' },
+      { id: 'laser_grid', name: 'Grade Laser', price: 15000, color: '#ff00aa', symbol: '🌐' },
+      { id: 'spaceship', name: 'Nave Pixel', price: 22000, color: '#33ff33', symbol: '🚀' },
+      { id: 'prism_gold', name: 'Prisma Dourado', price: 30000, color: '#ffd700', symbol: '▲' },
+      { id: 'cross_synth', name: 'X Synthwave', price: 40000, color: '#ff0077', symbol: '✕' },
+      { id: 'hazard_orange', name: 'Industrial Y', price: 50000, color: '#ff6600', symbol: 'Y' },
+      { id: 'eye_tech', name: 'Olho Místico', price: 70000, color: '#aa00ff', symbol: '👁' },
+      { id: 'eye_cyber', name: 'Olho Cyber', price: 90000, color: '#00ffff', symbol: '👁' },
+      { id: 'chip_core', name: 'Núcleo Central', price: 120000, color: '#0088ff', symbol: '🔲' },
+      { id: 'letter_a', name: 'Letra A Neon', price: 150000, color: '#ff00cc', symbol: 'A' },
+      { id: 'letter_x', name: 'Letra X Toxic', price: 200000, color: '#33ff00', symbol: 'X' },
+      { id: 'x_impact', name: 'X Impacto', price: 300000, color: '#ff2200', symbol: '💥' },
+      { id: 'target_pink', name: 'Alvo Supremo', price: 450000, color: '#d400ff', symbol: '◎' },
+      { id: 'letter_a_cyan', name: 'A Cian', price: 600000, color: '#00ffff', symbol: 'A' },
+      { id: 'axy_combo', name: 'AXY Combo', price: 800000, color: '#ff0055', symbol: 'AXY' },
+      { id: 'letter_y_purple', name: 'Y Neon', price: 1000000, color: '#aa00ff', symbol: 'Y' },
+      { id: 'letter_x_gold', name: 'X Ouro Cyber', price: 1500000, color: '#ffaa00', symbol: 'X' },
+      { id: 'arrows_cyber', name: 'Setas Duplas', price: 2000000, color: '#00ffbb', symbol: '«' },
+      { id: 'rainbow_core', name: 'Núcleo Rainbow', price: 5000000, color: '#ffffff', symbol: '🌈' }
+    ];
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    const soundEffects = {
+      jump: () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        const now = audioCtx.currentTime;
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(700, now + 0.2);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      },
+      correct: () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(659.25, now + 0.08);
+        osc.frequency.setValueAtTime(783.99, now + 0.16);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      },
+      wrong: () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.setValueAtTime(150, now + 0.1);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      },
+      stageUp: () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const notes = [440, 554.37, 659.25, 880];
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+          gain.gain.setValueAtTime(0.1, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.1);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.1);
+        });
+      },
+      victory: () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const melody = [523.25, 659.25, 783.99, 1046.50];
+        melody.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+          gain.gain.setValueAtTime(0.2, now + idx * 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.2);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + idx * 0.12);
+          osc.stop(now + idx * 0.12 + 0.2);
+        });
+      },
+      fail: () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(60, now + 0.4);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.4);
+      },
+      click: () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(450, now);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      }
+    };
+
+    let isRunning = false;
+    let isPaused = false;
+    let score = 0;
+    let lives = 2;
+    let currentStage = 1;
+    let stageProgress = 0;
+    const TOTAL_STAGES = 5;
+    const ANSWERS_PER_STAGE = 5;
+    let speed = 3.5;
+    let bgOffset = 0;
+    let currentAnswer = 0;
+    let playerName = "Anônimo";
+    let player, obstacles = [], particles = [], bgParticles = [];
+
+    // Sistema de Partículas
+    class Particle {
+      constructor(x, y, color, vx, vy, size, life) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.vx = vx;
+        this.vy = vy;
+        this.size = size;
+        this.life = life;
+        this.maxLife = life;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.life / this.maxLife);
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function initBgParticles() {
+      bgParticles = [];
+      for (let i = 0; i < 40; i++) {
+        bgParticles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 2 + 0.5,
+          speed: Math.random() * 1.5 + 0.5,
+          color: Math.random() > 0.5 ? 'rgba(0, 240, 255, 0.4)' : 'rgba(255, 0, 128, 0.4)'
+        });
+      }
+    }
+
+    class Player {
+      constructor() {
+        this.x = 100;
+        this.y = 300;
+        this.size = 40;
+        this.vy = 0;
+        this.gravity = 0.55;
+        this.jumpForce = -15.5;
+        this.grounded = true;
+        this.rotation = 0;
+        this.history = [];
+      }
+
+      jump() {
+        if (this.grounded) {
+          this.vy = this.jumpForce;
+          this.grounded = false;
+          soundEffects.jump();
+
+          // Partículas de Pulo
+          const skin = SKINS_CATALOG.find(s => s.id === equippedSkin) || SKINS_CATALOG[0];
+          for (let i = 0; i < 12; i++) {
+            particles.push(new Particle(
+              this.x + this.size / 2,
+              this.y + this.size,
+              skin.color,
+              (Math.random() - 0.5) * 6,
+              Math.random() * -3,
+              Math.random() * 3 + 1,
+              20
+            ));
+          }
+        }
+      }
+
+      update() {
+        // Histórico para Rastro (Trail)
+        this.history.push({ x: this.x, y: this.y, rotation: this.rotation });
+        if (this.history.length > 5) this.history.shift();
+
+        this.vy += this.gravity;
+        this.y += this.vy;
+
+        if (this.y >= 300) {
+          this.y = 300;
+          this.vy = 0;
+          this.grounded = true;
+          this.rotation = Math.round(this.rotation / (Math.PI / 2)) * (Math.PI / 2);
+
+          // Poeira ao Correr
+          if (Math.random() < 0.4) {
+            particles.push(new Particle(
+              this.x,
+              this.y + this.size,
+              'rgba(0, 240, 255, 0.5)',
+              -speed * 0.5,
+              (Math.random() - 0.5) * 1,
+              Math.random() * 2 + 1,
+              15
+            ));
+          }
+        } else {
+          this.rotation += 0.08;
+        }
+      }
+
+      draw() {
+        const skin = SKINS_CATALOG.find(s => s.id === equippedSkin) || SKINS_CATALOG[0];
+
+        // Desenhar Rastro (Trail)
+        this.history.forEach((pos, index) => {
+          ctx.save();
+          ctx.globalAlpha = (index + 1) / (this.history.length * 2.5);
+          ctx.translate(pos.x + this.size / 2, pos.y + this.size / 2);
+          ctx.rotate(pos.rotation);
+          ctx.fillStyle = skin.color;
+          ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+          ctx.restore();
+        });
+
+        // Desenhar Jogador Principal
+        ctx.save();
+        ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
+        ctx.rotate(this.rotation);
+
+        ctx.shadowColor = skin.color;
+        ctx.shadowBlur = 15;
+
+        // Fundo do Cubo
+        ctx.fillStyle = "#0c1021";
+        ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+
+        // Borda Neon
+        ctx.strokeStyle = skin.color;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(-this.size / 2, -this.size / 2, this.size, this.size);
+
+        // Símbolo / Arte Interna da Skin
+        ctx.fillStyle = skin.color;
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(skin.symbol, 0, 1);
+
+        ctx.restore();
+      }
+    }
+
+    class Obstacle {
+      constructor(x, type) {
+        this.x = x;
+        this.type = type;
+        this.groundY = 340;
+
+        if (this.type === 'single') {
+          this.width = 30;
+          this.height = 35;
+        } else if (this.type === 'double') {
+          this.width = 55;
+          this.height = 35;
+        } else if (this.type === 'tall') {
+          this.width = 35;
+          this.height = 45;
+        } else if (this.type === 'block_spike') {
+          this.width = 60;
+          this.height = 35;
+        }
+        this.y = this.groundY - this.height;
+      }
+
+      update() {
+        this.x -= speed;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.shadowColor = "#ff0055";
+        ctx.shadowBlur = 12;
+
+        const grad = ctx.createLinearGradient(this.x, this.y, this.x, this.groundY);
+        grad.addColorStop(0, '#ff0055');
+        grad.addColorStop(1, '#660022');
+
+        ctx.fillStyle = grad;
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+
+        if (this.type === 'single') {
+          ctx.beginPath();
+          ctx.moveTo(this.x, this.groundY);
+          ctx.lineTo(this.x + this.width / 2, this.y);
+          ctx.lineTo(this.x + this.width, this.groundY);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        } else if (this.type === 'double') {
+          let w2 = this.width / 2;
+          for (let i = 0; i < 2; i++) {
+            let ox = this.x + (i * w2);
+            ctx.beginPath();
+            ctx.moveTo(ox, this.groundY);
+            ctx.lineTo(ox + w2 / 2, this.y);
+            ctx.lineTo(ox + w2, this.groundY);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          }
+        } else if (this.type === 'tall') {
+          ctx.beginPath();
+          ctx.moveTo(this.x, this.groundY);
+          ctx.lineTo(this.x + this.width / 2, this.y);
+          ctx.lineTo(this.x + this.width, this.groundY);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        } else if (this.type === 'block_spike') {
+          ctx.fillStyle = "#16192b";
+          ctx.fillRect(this.x, this.groundY - 35, 30, 35);
+          ctx.strokeRect(this.x, this.groundY - 35, 30, 35);
+
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.moveTo(this.x + 30, this.groundY);
+          ctx.lineTo(this.x + 45, this.groundY - 35);
+          ctx.lineTo(this.x + 60, this.groundY);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+
+    function drawBackground() {
+      bgOffset = (bgOffset + speed * 0.3) % 800;
+
+      // 1. Gradiente Neon Estilo Synthwave
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bgGrad.addColorStop(0, '#05000c');
+      bgGrad.addColorStop(0.5, '#1a002c');
+      bgGrad.addColorStop(0.75, '#320042');
+      bgGrad.addColorStop(1, '#080d21');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Partículas Flutuantes no Fundo
+      bgParticles.forEach(p => {
+        p.x -= p.speed * 0.5;
+        if (p.x < 0) p.x = canvas.width;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // 2. Anéis / Sol Neon
+      ctx.save();
+      ctx.shadowColor = '#ff00aa';
+      ctx.shadowBlur = 20;
+
+      const sunGrad = ctx.createLinearGradient(0, 80, 0, 220);
+      sunGrad.addColorStop(0, '#ffcc00');
+      sunGrad.addColorStop(1, '#ff0055');
+      ctx.fillStyle = sunGrad;
+      ctx.beginPath();
+      ctx.arc(400, 180, 60, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // 3. Silhueta de Prédios Cyberpunk
+      const buildings = [
+        { x: 30, w: 50, h: 120 }, { x: 90, w: 70, h: 100 },
+        { x: 170, w: 40, h: 140 }, { x: 420, w: 60, h: 110 },
+        { x: 500, w: 50, h: 150 }, { x: 570, w: 80, h: 80 },
+        { x: 670, w: 65, h: 130 }
+      ];
+
+      ctx.save();
+      buildings.forEach(b => {
+        let bx = (b.x - (bgOffset * 0.5) % 800);
+        if (bx < -b.w) bx += 800;
+
+        ctx.fillStyle = '#0d021a';
+        ctx.strokeStyle = 'rgba(255, 0, 170, 0.4)';
+        ctx.lineWidth = 1.5;
+
+        ctx.fillRect(bx, 340 - b.h, b.w, b.h);
+        ctx.strokeRect(bx, 340 - b.h, b.w, b.h);
+
+        // Janelas Neon
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.15)';
+        for (let y = 340 - b.h + 15; y < 330; y += 15) {
+          for (let x = bx + 6; x < bx + b.w - 6; x += 10) {
+            ctx.fillRect(x, y, 5, 6);
+          }
+        }
+      });
+      ctx.restore();
+
+      // 4. Grade Neon Perspective no Chão
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+      ctx.lineWidth = 1;
+
+      for (let y = 340; y <= canvas.height; y += 15) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      const gridSpacing = 40;
+      const shift = (bgOffset) % gridSpacing;
+      for (let x = -gridSpacing; x <= canvas.width + gridSpacing; x += gridSpacing) {
+        ctx.beginPath();
+        ctx.moveTo(x - shift, 340);
+        ctx.lineTo((x - shift - 50), canvas.height);
+        ctx.stroke();
+      }
+
+      // Linha do Chão Brilhante
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#00f0ff';
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.moveTo(0, 340);
+      ctx.lineTo(canvas.width, 340);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function getRandomObstacleType() {
+      const types = ['single', 'double', 'tall', 'block_spike'];
+      return types[Math.floor(Math.random() * types.length)];
+    }
+
+    function generateProblem() {
+      const ops = ['+', '-', '*'];
+      let op, a, b, result;
+
+      const maxNum = 5 + (currentStage * 3);
+
+      do {
+        op = ops[Math.floor(Math.random() * ops.length)];
+        if (op === '+') {
+          a = Math.floor(Math.random() * maxNum) + 1;
+          b = Math.floor(Math.random() * maxNum) + 1;
+          result = a + b;
+        } else if (op === '-') {
+          a = Math.floor(Math.random() * maxNum) + 5;
+          b = Math.floor(Math.random() * a) + 1;
+          result = a - b;
+        } else {
+          a = Math.floor(Math.random() * Math.min(maxNum, 8)) + 2;
+          b = Math.floor(Math.random() * Math.min(maxNum, 8)) + 2;
+          result = a * b;
+        }
+      } while (result === 13);
+
+      currentAnswer = result;
+      document.getElementById('problem').innerText = `${a} ${op} ${b} = ?`;
+
+      let choices = [currentAnswer];
+      while (choices.length < 3) {
+        let wrong = currentAnswer + (Math.floor(Math.random() * 7) - 3);
+        if (wrong >= 0 && wrong !== 13 && !choices.includes(wrong)) {
+          choices.push(wrong);
+        }
+      }
+      choices.sort(() => Math.random() - 0.5);
+      document.querySelectorAll('.opt-btn').forEach((btn, idx) => btn.innerText = choices[idx]);
+    }
+
+    function checkAnswer(btn) {
+      if (!isRunning || isPaused) return;
+      if (parseInt(btn.innerText, 10) === currentAnswer) {
+        player.jump();
+        score += 10;
+        stageProgress++;
+
+        document.getElementById('score-val').innerText = score;
+        document.getElementById('stage-progress').innerText = stageProgress;
+
+        if (stageProgress >= ANSWERS_PER_STAGE) {
+          if (currentStage >= TOTAL_STAGES) {
+            gameVictory();
+            return;
+          } else {
+            currentStage++;
+            stageProgress = 0;
+            speed += 0.6;
+            soundEffects.stageUp();
+            document.getElementById('stage-val').innerText = currentStage;
+            document.getElementById('stage-progress').innerText = stageProgress;
+          }
+        } else {
+          soundEffects.correct();
+        }
+
+        generateProblem();
+      } else {
+        lives--;
+        document.getElementById('life1').innerText = lives >= 1 ? '❤️' : '🖤';
+        document.getElementById('life2').innerText = lives >= 2 ? '❤️' : '🖤';
+        if (lives <= 0) gameOver("Você errou 2 contas!");
+        else soundEffects.wrong();
+      }
+    }
+
+    function renderShopUI() {
+      document.getElementById('coins-val').innerText = userCoins.toLocaleString('pt-BR');
+      const grid = document.getElementById('shop-grid');
+      grid.innerHTML = '';
+
+      SKINS_CATALOG.forEach(skin => {
+        const card = document.createElement('div');
+        card.className = 'shop-card';
+
+        const preview = document.createElement('div');
+        preview.className = 'skin-preview';
+        preview.style.borderColor = skin.color;
+        preview.style.boxShadow = `0 0 10px ${skin.color}`;
+        preview.innerText = skin.symbol;
+
+        const name = document.createElement('div');
+        name.className = 'skin-name';
+        name.innerText = skin.name;
+
+        const price = document.createElement('div');
+        price.className = 'skin-price';
+        price.innerText = skin.price === 0 ? 'Grátis' : `💰 ${skin.price.toLocaleString('pt-BR')}`;
+
+        const btn = document.createElement('button');
+        btn.className = 'btn-buy';
+
+        const isOwned = ownedSkins.includes(skin.id);
+        const isEquipped = equippedSkin === skin.id;
+
+        if (isEquipped) {
+          btn.innerText = 'USANDO';
+          btn.classList.add('equipped');
+        } else if (isOwned) {
+          btn.innerText = 'USAR';
+          btn.classList.add('owned');
+          btn.onclick = () => equipSkin(skin.id);
+        } else if (userCoins >= skin.price) {
+          btn.innerText = 'COMPRAR';
+          btn.classList.add('buyable');
+          btn.onclick = () => buySkin(skin);
+        } else {
+          btn.innerText = 'BLOQUEADO';
+          btn.classList.add('disabled');
+        }
+
+        card.appendChild(preview);
+        card.appendChild(name);
+        card.appendChild(price);
+        card.appendChild(btn);
+        grid.appendChild(card);
+      });
+    }
+
+    function buySkin(skin) {
+      soundEffects.click();
+      if (userCoins >= skin.price && !ownedSkins.includes(skin.id)) {
+        userCoins -= skin.price;
+        ownedSkins.push(skin.id);
+        equippedSkin = skin.id;
+
+        localStorage.setItem('md_coins', userCoins);
+        localStorage.setItem('md_owned_skins', JSON.stringify(ownedSkins));
+        localStorage.setItem('md_equipped_skin', equippedSkin);
+
+        renderShopUI();
+      }
+    }
+
+    function equipSkin(skinId) {
+      soundEffects.click();
+      if (ownedSkins.includes(skinId)) {
+        equippedSkin = skinId;
+        localStorage.setItem('md_equipped_skin', equippedSkin);
+        renderShopUI();
+      }
+    }
+
+    function saveScore(name, score) {
+      if (score <= 0) return;
+      db.ref('scores').push({
+        name: name,
+        score: score,
+        timestamp: Date.now()
+      });
+    }
+
+    function fetchRanking() {
+      rankingList.innerHTML = '<div class="ranking-item"><span>Carregando...</span></div>';
+      db.ref('scores').orderByChild('score').limitToLast(10).once('value', (snapshot) => {
+        const scores = [];
+        snapshot.forEach((child) => { scores.push(child.val()); });
+        scores.reverse();
+
+        rankingList.innerHTML = '';
+        if (scores.length === 0) {
+          rankingList.innerHTML = '<div class="ranking-item"><span>Nenhum registro ainda.</span></div>';
+          return;
+        }
+
+        scores.forEach((item, index) => {
+          const div = document.createElement('div');
+          div.className = 'ranking-item';
+          div.innerHTML = `<span>#${index + 1} ${item.name}</span><span>${item.score} pts</span>`;
+          rankingList.appendChild(div);
+        });
+      });
+    }
+
+    function init() {
+      player = new Player();
+      obstacles = [new Obstacle(canvas.width + 200, getRandomObstacleType())];
+      particles = [];
+      initBgParticles();
+      score = 0;
+      lives = 2;
+      currentStage = 1;
+      stageProgress = 0;
+      speed = 3.5;
+      bgOffset = 0;
+      isPaused = false;
+
+      document.getElementById('score-val').innerText = score;
+      document.getElementById('stage-val').innerText = currentStage;
+      document.getElementById('stage-progress').innerText = stageProgress;
+      document.getElementById('life1').innerText = '❤️';
+      document.getElementById('life2').innerText = '❤️';
+      generateProblem();
+    }
+
+    function togglePause() {
+      soundEffects.click();
+      if (!isRunning) return;
+
+      isPaused = !isPaused;
+      if (isPaused) {
+        pauseScreen.classList.remove('hidden');
+      } else {
+        pauseScreen.classList.add('hidden');
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    function gameLoop() {
+      if (!isRunning || isPaused) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawBackground();
+
+      // Atualizar e Desenhar Partículas
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].life <= 0) particles.splice(i, 1);
+      }
+
+      player.update();
+      player.draw();
+
+      if (obstacles.length === 0 || obstacles[obstacles.length - 1].x < canvas.width - 400) {
+        obstacles.push(new Obstacle(canvas.width + 100, getRandomObstacleType()));
+      }
+
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        let obs = obstacles[i];
+        obs.update();
+        obs.draw();
+
+        const pMargin = 4;
+        if (
+          player.x + pMargin < obs.x + obs.width - pMargin &&
+          player.x + player.size - pMargin > obs.x + pMargin &&
+          player.y + pMargin < obs.y + obs.height - pMargin &&
+          player.y + player.size - pMargin > obs.y + pMargin
+        ) {
+          gameOver("Você bateu no obstáculo!");
+        }
+
+        if (obs.x < -obs.width) obstacles.splice(i, 1);
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function gameOver(reason) {
+      isRunning = false;
+      soundEffects.fail();
+
+      userCoins += score;
+      localStorage.setItem('md_coins', userCoins);
+
+      saveScore(playerName, score);
+
+      mathUi.classList.add('hidden');
+      statusBar.classList.add('hidden');
+      playerTag.classList.add('hidden');
+      pauseBtn.classList.add('hidden');
+      gameoverScreen.classList.remove('hidden');
+
+      document.getElementById('gameover-reason').innerText = reason;
+      document.getElementById('final-score').innerText = score;
+      document.getElementById('coins-earned').innerText = score;
+    }
+
+    function gameVictory() {
+      isRunning = false;
+      soundEffects.victory();
+
+      userCoins += score + 50;
+      localStorage.setItem('md_coins', userCoins);
+
+      saveScore(playerName, score);
+
+      mathUi.classList.add('hidden');
+      statusBar.classList.add('hidden');
+      playerTag.classList.add('hidden');
+      pauseBtn.classList.add('hidden');
+      winScreen.classList.remove('hidden');
+
+      document.getElementById('win-score').innerText = score;
+      document.getElementById('win-coins').innerText = score + 50;
+    }
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+      soundEffects.click();
+      const input = playerNameInput.value.trim();
+      playerName = input !== "" ? input : "Jogador";
+      tagName.innerText = playerName;
+
+      startScreen.classList.add('hidden');
+      mathUi.classList.remove('hidden');
+      statusBar.classList.remove('hidden');
+      playerTag.classList.remove('hidden');
+      pauseBtn.classList.remove('hidden');
+
+      isRunning = true;
+      init();
+      gameLoop();
+    });
+
+    document.getElementById('shop-btn').addEventListener('click', () => {
+      soundEffects.click();
+      startScreen.classList.add('hidden');
+      shopScreen.classList.remove('hidden');
+      renderShopUI();
+    });
+
+    document.getElementById('shop-back-btn').addEventListener('click', () => {
+      soundEffects.click();
+      shopScreen.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+    });
+
+    pauseBtn.addEventListener('click', togglePause);
+
+    document.getElementById('resume-btn').addEventListener('click', () => {
+      togglePause();
+    });
+
+    document.getElementById('quit-btn').addEventListener('click', () => {
+      soundEffects.click();
+      isPaused = false;
+      isRunning = false;
+      pauseScreen.classList.add('hidden');
+      mathUi.classList.add('hidden');
+      statusBar.classList.add('hidden');
+      playerTag.classList.add('hidden');
+      pauseBtn.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+    });
+
+    document.getElementById('rank-btn').addEventListener('click', () => {
+      soundEffects.click();
+      startScreen.classList.add('hidden');
+      rankingScreen.classList.remove('hidden');
+      fetchRanking();
+    });
+
+    document.getElementById('back-btn').addEventListener('click', () => {
+      soundEffects.click();
+      rankingScreen.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+    });
+
+    document.getElementById('restart-btn').addEventListener('click', () => {
+      soundEffects.click();
+      gameoverScreen.classList.add('hidden');
+      mathUi.classList.remove('hidden');
+      statusBar.classList.remove('hidden');
+      playerTag.classList.remove('hidden');
+      pauseBtn.classList.remove('hidden');
+      isRunning = true;
+      init();
+      gameLoop();
+    });
+
+    document.getElementById('menu-btn').addEventListener('click', () => {
+      soundEffects.click();
+      gameoverScreen.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+    });
+
+    document.getElementById('win-restart-btn').addEventListener('click', () => {
+      soundEffects.click();
+      winScreen.classList.add('hidden');
+      mathUi.classList.remove('hidden');
+      statusBar.classList.remove('hidden');
+      playerTag.classList.remove('hidden');
+      pauseBtn.classList.remove('hidden');
+      isRunning = true;
+      init();
+      gameLoop();
+    });
+
+    document.getElementById('win-menu-btn').addEventListener('click', () => {
+      soundEffects.click();
+      winScreen.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+    });
+  </script>
+</body>
+</html>
